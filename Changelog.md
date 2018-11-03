@@ -9,6 +9,7 @@ Compiler Features:
  * SMTChecker: Support ``msg``, ``tx`` and ``block`` member variables.
  * SMTChecker: Support ``gasleft()`` and ``blockhash()`` functions.
  * SMTChecker: Support internal bound function calls.
+ * Commandline interface: Experimental ``--optimize`` option for assembly mode.
 
 
 Bugfixes:

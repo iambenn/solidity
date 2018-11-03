@@ -34,6 +34,8 @@
 #include <libyul/backends/evm/EVMCodeTransform.h>
 #include <libyul/backends/evm/EVMAssembly.h>
 
+#include <libyul/optimiser/Suite.h>
+
 using namespace std;
 using namespace dev;
 using namespace dev::solidity;
@@ -86,6 +88,13 @@ bool AssemblyStack::analyze(assembly::Block const& _block, Scanner const* _scann
 	m_parserResult = make_shared<assembly::Block>(_block);
 
 	return analyzeParsed();
+}
+
+void AssemblyStack::optimize()
+{
+	solAssert(m_language != Language::Assembly, "Optimization requested for loose assembly.");
+	yul::OptimiserSuite::run(*m_parserResult, *m_analysisInfo);
+	solAssert(analyzeParsed(), "Invalid source code after optimization.");
 }
 
 bool AssemblyStack::analyzeParsed()
