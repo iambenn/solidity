@@ -39,6 +39,7 @@ namespace yul
 class EVMAssembly: public AbstractAssembly
 {
 public:
+	// TODO provide name of object itself?
 	explicit EVMAssembly(bool _evm15 = false): m_evm15(_evm15) { }
 	virtual ~EVMAssembly() {}
 

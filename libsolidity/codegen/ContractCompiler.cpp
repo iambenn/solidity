@@ -615,6 +615,8 @@ bool ContractCompiler::visit(InlineAssembly const& _inlineAssembly)
 		}
 	};
 	solAssert(_inlineAssembly.annotation().analysisInfo, "");
+	// TODO generate a simple object without sub-objects here?
+	// but it should rather be a fragment - I guess it will still work.
 	assembly::CodeGenerator::assemble(
 		_inlineAssembly.operations(),
 		*_inlineAssembly.annotation().analysisInfo,

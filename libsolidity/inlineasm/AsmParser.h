@@ -42,6 +42,8 @@ public:
 	explicit Parser(langutil::ErrorReporter& _errorReporter, AsmFlavour _flavour = AsmFlavour::Loose):
 		ParserBase(_errorReporter), m_flavour(_flavour) {}
 
+	// TODO the "reuse scanner" flag can probably be removed now (always true)
+
 	/// Parses an inline assembly block starting with `{` and ending with `}`.
 	/// @param _reuseScanner if true, do check for end of input after the `}`.
 	/// @returns an empty shared pointer on error.

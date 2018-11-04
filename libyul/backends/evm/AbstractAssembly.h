@@ -53,6 +53,11 @@ class AbstractAssembly
 public:
 	using LabelID = size_t;
 
+	// TODO provide name of the object itself?
+	// TODO how can we reach inside sub-object?
+	// I guess we need to provide sub-assemblies
+	// scoping rules are: Current object and all sub-objects are in scope.
+	// this makes it hard to keep names unique!
 	virtual ~AbstractAssembly() {}
 
 	/// Set a new source location valid starting from the next instruction.
@@ -76,6 +81,10 @@ public:
 	/// Currently, we assume that the value is always a 20 byte number.
 	virtual void appendLinkerSymbol(std::string const& _name) = 0;
 
+	/// namedData -> id
+	/// append data copy, append data size, append data offset
+	/// append nameddata
+
 	/// Append a jump instruction.
 	/// @param _stackDiffAfter the stack adjustment after this instruction.
 	/// This is helpful to stack height analysis if there is no continuing control flow.
@@ -97,6 +106,8 @@ public:
 	virtual void appendReturnsub(int _returns, int _stackDiffAfter = 0) = 0;
 
 	/// Append the assembled size as a constant.
+	/// TODO: Can this be replaced by "nameddatasize?" - then we have to name the
+	/// current object itself.
 	virtual void appendAssemblySize() = 0;
 };
 
