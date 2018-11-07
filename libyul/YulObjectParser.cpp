@@ -20,6 +20,10 @@
 
 #include <libyul/YulObjectParser.h>
 
+#include <libyul/Exceptions.h>
+
+#include <libsolidity/inlineasm/AsmParser.h>
+
 #include <liblangutil/Token.h>
 
 using namespace dev;
@@ -38,7 +42,7 @@ shared_ptr<YulObject> YulObjectParser::parse(shared_ptr<Scanner> const& _scanner
 		if (currentToken() == Token::LBrace)
 		{
 			object = make_shared<YulObject>();
-			object->code = parseCode();
+			object->code = parseBlock();
 		}
 		else
 			object = parseObject();
@@ -54,17 +58,80 @@ shared_ptr<YulObject> YulObjectParser::parse(shared_ptr<Scanner> const& _scanner
 	return nullptr;
 }
 
+shared_ptr<YulObject> YulObjectParser::parseObject(YulObject* _containingObject)
+{
+	RecursionGuard guard(*this);
+
+	if (currentToken() != Token::Identifier || currentLiteral() != "object")
+		fatalParserError("Expected keyword \"object\".");
+	advance();
+
+	shared_ptr<YulObject> ret = make_shared<YulObject>();
+	ret->name = parseUniqueName(_containingObject);
+
+	expectToken(Token::LBrace);
+
+	ret->code = parseCode();
+
+	while (currentToken() != Token::RBrace)
+	{
+		if (currentToken() == Token::Identifier && currentLiteral() == "object")
+			parseObject(ret.get());
+		else if (currentToken() == Token::Identifier && currentLiteral() == "data")
+			parseData(*ret);
+		else
+			fatalParserError("Expected keyword \"data\" or \"object\" or \"}\".");
+	}
+	if (_containingObject)
+		_containingObject->subObjects[ret->name] = ret;
+
+	expectToken(Token::RBrace);
+
+	return ret;
+}
+
 shared_ptr<Block> YulObjectParser::parseCode()
 {
+	if (currentToken() != Token::Identifier || currentLiteral() != "code")
+		fatalParserError("Expected keyword \"code\".");
+	advance();
 
+	return parseBlock();
 }
 
-void YulObjectParser::parseData(YulObject& _currentObject)
+shared_ptr<Block> YulObjectParser::parseBlock()
 {
-
+	solidity::assembly::Parser parser(m_errorReporter, m_flavour);
+	shared_ptr<Block> block = parser.parse(m_scanner, true);
+	yulAssert(block || m_errorReporter.hasErrors(), "Invalid block but no error!");
+	return block;
 }
 
-shared_ptr<YulObject> YulObjectParser::parseObject()
+void YulObjectParser::parseData(YulObject& _containingObject)
 {
+	solAssert(
+		currentToken() == Token::Identifier && currentLiteral() == "data",
+		"parseData called on wrong input."
+	);
+	advance();
 
+	YulString name = parseUniqueName(&_containingObject);
+
+	expectToken(Token::StringLiteral, false);
+	_containingObject.subObjects[name] = asBytes(currentLiteral());
+	advance();
+}
+
+YulString YulObjectParser::parseUniqueName(YulObject const* _containingObject)
+{
+	expectToken(Token::StringLiteral, false);
+	YulString name{currentLiteral()};
+	if (name.empty())
+		parserError("Object name cannot be empty.");
+	else if (_containingObject && _containingObject->name == name)
+		parserError("Object name cannot be the same as the name of the containing object.");
+	else if (_containingObject && _containingObject->subObjects.count(name))
+		parserError("Object name \"" + name.str() + "\" already exists inside the containing object.");
+	advance();
+	return name;
 }

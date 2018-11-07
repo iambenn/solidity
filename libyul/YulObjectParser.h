@@ -58,12 +58,15 @@ public:
 	std::shared_ptr<YulObject> parse(std::shared_ptr<langutil::Scanner> const& _scanner, bool _reuseScanner);
 
 private:
+	std::shared_ptr<YulObject> parseObject(YulObject* _containingObject = nullptr);
 	std::shared_ptr<Block> parseCode();
-	void parseData(YulObject& _currentObject);
-	std::shared_ptr<YulObject> parseObject();
+	std::shared_ptr<Block> parseBlock();
+	void parseData(YulObject& _containingObject);
+
+	/// Tries to parse a name that is non-empty and unique inside the containing object.
+	YulString parseUniqueName(YulObject const* _containingObject);
 
 	solidity::assembly::AsmFlavour m_flavour;
-	std::shared_ptr<solidity::Scanner> m_scanner;
 };
 
 }
