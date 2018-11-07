@@ -25,6 +25,8 @@
 
 #include <libdevcore/CommonData.h>
 
+#include <boost/variant.hpp>
+
 #include <memory>
 
 namespace dev
@@ -45,12 +47,13 @@ namespace yul
 class YulObject
 {
 public:
-	std::string toString();
+	/// @returns a (parseable) string representation. Includes types if @a _yul is set.
+	std::string toString(bool _yul);
 
-	std::string name;
+	YulString name;
 	std::shared_ptr<Block> code;
-	std::map<YulString, bytes> data;
-	std::map<YulString, YulObject> subObjects;
+	/// Sub-objects can either be raw data or another object.
+	std::map<YulString, boost::variant<bytes, std::shared_ptr<YulObject>>> subObjects;
 	std::shared_ptr<solidity::assembly::AsmAnalysisInfo> analysisInfo;
 };
 

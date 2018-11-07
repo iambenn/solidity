@@ -24,6 +24,8 @@
 
 #include <libsolidity/inlineasm/AsmPrinter.h>
 
+#include <libdevcore/Visitor.h>
+
 #include <boost/algorithm/string/replace.hpp>
 
 using namespace dev;
@@ -33,23 +35,29 @@ using namespace std;
 namespace
 {
 
-string const& indent(std::string& _input)
+string indent(std::string const& _input)
 {
-	boost::replace_all("\n", "\n    ", _input);
-	return _input;
+	if (_input.empty())
+		return _input;
+	return boost::replace_all_copy("    " + _input, "\n", "\n    ");
 }
 
 }
 
-string YulObject::toString()
+string YulObject::toString(bool _yul)
 {
-	yulAssert(m_code, "No code");
-	string inner = "code {\n" + indent(solidity::assembly::AsmPrinter{}(*m_code)) + "}\n";
+	yulAssert(code, "No code");
+	string inner = "code " + solidity::assembly::AsmPrinter{_yul}(*code);
 
-	inner += "\n";
-	for (auto const& data: m_data)
-		inner += "data \"" + data.name + "\" hex\"" + toHex(data.second) + "\"\n";
+	for (auto const& obj: subObjects)
+		boost::apply_visitor(GenericVisitor<bytes const, shared_ptr<YulObject> const>{
+			[&](bytes const& _data) {
+				inner += "\ndata \"" + obj.first.str() + "\" hex\"" + toHex(_data) + "\"";
+			}, [&](shared_ptr<YulObject> const& _subObject) {
+				yulAssert(obj.first == _subObject->name, "Inconsistent names.");
+				inner += "\n" + _subObject->toString(_yul);
+			}
+		}, obj.second);
 
-
-	return "object {\n" + indent(inner) + "}\n";
+	return "object \"" + name.str() + "\" {\n" + indent(inner) + "\n}";
 }
