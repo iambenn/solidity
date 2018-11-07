@@ -7,6 +7,14 @@ list(APPEND CMAKE_MODULE_PATH ${ETH_CMAKE_DIR})
 include(EthPolicy)
 eth_policy()
 
+# CMake package manager
+include(HunterGate)
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.21.16.tar.gz"
+    SHA1 "aa1faccd24f33dd2c368f85a4e9ca2e5d9c249cb"
+    LOCAL
+)
+
 # project name and version should be set after cmake_policy CMP0048
 set(PROJECT_VERSION "0.5.1")
 project(solidity VERSION ${PROJECT_VERSION})
