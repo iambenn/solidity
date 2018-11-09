@@ -132,5 +132,20 @@ public:
 	);
 };
 
+/**
+ * Specialization of SymbolicVariable for Mapping
+ */
+class SymbolicMappingVariable: public SymbolicVariable
+{
+public:
+	SymbolicMappingVariable(
+		TypePointer _type,
+		std::string const& _uniqueName,
+		smt::SolverInterface& _interface
+	);
+protected:
+	smt::Expression valueAtIndex(int _index) const;
+};
+
 }
 }

@@ -58,8 +58,7 @@ void SMTChecker::analyze(SourceUnit const& _source, shared_ptr<Scanner> const& _
 bool SMTChecker::visit(ContractDefinition const& _contract)
 {
 	for (auto _var : _contract.stateVariables())
-		if (_var->type()->isValueType())
-			createVariable(*_var);
+		createVariable(*_var);
 	return true;
 }
 
@@ -248,11 +247,70 @@ void SMTChecker::endVisit(Assignment const& _assignment)
 				"Assertion checker does not yet implement such assignments."
 			);
 	}
+	else if (dynamic_cast<IndexAccess const*>(&_assignment.leftHandSide()))
+		arrayAssignment(_assignment);
 	else
 		m_errorReporter.warning(
 			_assignment.location(),
 			"Assertion checker does not yet implement such assignments."
 		);
+}
+
+void SMTChecker::arrayAssignment(Assignment const& _assignment)
+{
+	auto left = dynamic_cast<IndexAccess const*>(&_assignment.leftHandSide());
+	solAssert(left, "");
+
+	vector<smt::Expression> stores;
+	stores.emplace_back(expr(_assignment.rightHandSide()));
+	bool error = false;
+	// This loop handles multi-dimensional arrays.
+	// The first element in stores, added above, stores the actual assigned
+	// value in the innermost mapping.
+	// The others store the previously modified mapping into the next outer mapping.
+	// The final store is finally assigned to _assignment.
+	while (!error && !dynamic_cast<Identifier const*>(&left->baseExpression()))
+	{
+		if (auto base = dynamic_cast<IndexAccess const*>(&left->baseExpression()))
+		{
+			stores.emplace_back(
+				smt::Expression::store(
+					expr(left->baseExpression()),
+					expr(*left->indexExpression()),
+					stores.back()
+				));
+			left = base;
+		}
+		else
+			error = true;
+	}
+	if (error)
+		m_errorReporter.warning(
+			_assignment.location(),
+			"Assertion checker does not yet implement such assignments."
+		);
+	else
+	{
+		Identifier const* id = dynamic_cast<Identifier const*>(&left->baseExpression());
+		solAssert(id, "");
+		VariableDeclaration const& varDecl = dynamic_cast<VariableDeclaration const&>(*id->annotation().referencedDeclaration);
+		if (knownVariable(varDecl))
+		{
+			m_interface->addAssertion(
+				newValue(varDecl) == smt::Expression::store(
+					expr(*id),
+					expr(*left->indexExpression()),
+					stores.back()
+				)
+			);
+			defineExpr(_assignment, expr(_assignment.rightHandSide()));
+		}
+		else
+			m_errorReporter.warning(
+				_assignment.location(),
+				"Assertion checker does not yet implement such assignments."
+			);
+	}
 }
 
 void SMTChecker::endVisit(TupleExpression const& _tuple)
@@ -435,7 +493,7 @@ void SMTChecker::visitBlockHash(FunctionCall const& _funCall)
 		make_shared<smt::FunctionSort>(vector<smt::SortPointer>{paramSort}, returnSort)
 	);
 	defineExpr(_funCall, m_uninterpretedFunctions.at(blockHash)({expr(*arguments.at(0))}));
-	m_uninterpretedTerms.push_back(&_funCall);
+	m_uninterpretedTerms.insert(&_funCall);
 }
 
 void SMTChecker::inlineFunctionCall(FunctionCall const& _funCall)
@@ -598,6 +656,45 @@ bool SMTChecker::visit(MemberAccess const& _memberAccess)
 		);
 
 	return true;
+}
+
+void SMTChecker::endVisit(IndexAccess const& _indexAccess)
+{
+	bool error = false;
+	if (Identifier const* id = dynamic_cast<Identifier const*>(&_indexAccess.baseExpression()))
+	{
+		VariableDeclaration const& varDecl = dynamic_cast<VariableDeclaration const&>(*id->annotation().referencedDeclaration);
+		if (knownVariable(varDecl))
+			defineExpr(_indexAccess, smt::Expression::select(currentValue(varDecl), expr(*_indexAccess.indexExpression())));
+		else
+			error = true;
+	}
+	else if (IndexAccess const* innerAccess = dynamic_cast<IndexAccess const*>(&_indexAccess.baseExpression()))
+	{
+		if (knownExpr(*innerAccess))
+		{
+			defineExpr(_indexAccess, smt::Expression::select(expr(*innerAccess), expr(*_indexAccess.indexExpression())));
+			// If the base expression of _indexAccess is also an IndexAccess we
+			// remove it from the terms that we ask models for.
+			// This is done to avoid asking for models for entire arrays in case of
+			// multi-dimensional access.
+			// This way we only ask a model for the outermost access.
+			if (m_uninterpretedTerms.count(innerAccess))
+				m_uninterpretedTerms.erase(innerAccess);
+		}
+		else
+			error = true;
+	}
+	else
+		error = true;
+
+	if (error)
+		m_errorReporter.warning(
+			_indexAccess.location(),
+			"Assertion checker does not yet implement this expression."
+		);
+	else
+		m_uninterpretedTerms.insert(&_indexAccess);
 }
 
 void SMTChecker::defineSpecialVariable(string const& _name, Expression const& _expr, bool _increaseIndex)
@@ -800,8 +897,11 @@ void SMTChecker::checkCondition(
 		}
 		for (auto const& var: m_variables)
 		{
-			expressionsToEvaluate.emplace_back(currentValue(*var.first));
-			expressionNames.push_back(var.first->name());
+			if (var.first->type()->isValueType())
+			{
+				expressionsToEvaluate.emplace_back(currentValue(*var.first));
+				expressionNames.push_back(var.first->name());
+			}
 		}
 		for (auto const& var: m_specialVariables)
 		{

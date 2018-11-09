@@ -45,7 +45,12 @@ smt::SortPointer dev::solidity::smtSort(Type const& _type)
 	}
 	case smt::Kind::Array:
 	{
-		solUnimplementedAssert(false, "Invalid type");
+		if (isMapping(_type.category()))
+		{
+			auto mapType = dynamic_cast<MappingType const*>(&_type);
+			solAssert(mapType, "");
+			return make_shared<smt::ArraySort>(smtSort(*mapType->keyType()), smtSort(*mapType->valueType()));
+		}
 	}
 	}
 	solAssert(false, "Invalid type");
@@ -65,6 +70,8 @@ smt::Kind dev::solidity::smtKind(Type::Category _category)
 		return smt::Kind::Int;
 	else if (isBool(_category))
 		return smt::Kind::Bool;
+	else if (isMapping(_category))
+		return smt::Kind::Array;
 	solAssert(false, "Invalid type");
 }
 
@@ -72,7 +79,8 @@ bool dev::solidity::isSupportedType(Type::Category _category)
 {
 	return isNumber(_category) ||
 		isBool(_category) ||
-		isFunction(_category);
+		isFunction(_category) ||
+		isMapping(_category);
 }
 
 pair<bool, shared_ptr<SymbolicVariable>> dev::solidity::newSymbolicVariable(
@@ -112,6 +120,8 @@ pair<bool, shared_ptr<SymbolicVariable>> dev::solidity::newSymbolicVariable(
 		else
 			var = make_shared<SymbolicIntVariable>(type, _uniqueName, _solver);
 	}
+	else if (isMapping(_type.category()))
+		var = make_shared<SymbolicMappingVariable>(type, _uniqueName, _solver);
 	else
 		solAssert(false, "");
 	return make_pair(abstract, var);
@@ -158,6 +168,11 @@ bool dev::solidity::isBool(Type::Category _category)
 bool dev::solidity::isFunction(Type::Category _category)
 {
 	return _category == Type::Category::Function;
+}
+
+bool dev::solidity::isMapping(Type::Category _category)
+{
+	return _category == Type::Category::Mapping;
 }
 
 smt::Expression dev::solidity::minValue(IntegerType const& _type)

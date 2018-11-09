@@ -93,3 +93,22 @@ SymbolicFixedBytesVariable::SymbolicFixedBytesVariable(
 	SymbolicIntVariable(make_shared<IntegerType>(_numBytes * 8), _uniqueName, _interface)
 {
 }
+
+SymbolicMappingVariable::SymbolicMappingVariable(
+	TypePointer _type,
+	string const& _uniqueName,
+	smt::SolverInterface& _interface
+):
+	SymbolicVariable(move(_type), _uniqueName, _interface)
+{
+	solAssert(isMapping(m_type->category()), "");
+}
+
+smt::Expression SymbolicMappingVariable::valueAtIndex(int _index) const
+{
+	auto mapType = dynamic_cast<MappingType const*>(m_type.get());
+	solAssert(mapType, "");
+	auto domain = smtSort(*mapType->keyType());
+	auto range = smtSort(*mapType->valueType());
+	return m_interface.newVariable(uniqueSymbol(_index), make_shared<smt::ArraySort>(domain, range));
+}
