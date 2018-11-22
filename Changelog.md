@@ -1,7 +1,7 @@
 ### 0.5.1 (unreleased)
 
 Language Features:
- * Allow mapping arguments and returns for public and external library functions.
+ * Allow mapping type for parameters and return variables of public and external library functions.
 
 
 Compiler Features:

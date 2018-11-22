@@ -3,4 +3,4 @@ contract C {
     }
 }
 // ----
-// TypeError: (51-79): Mapping types as arguments or return values can only be used in internal or library functions.
+// TypeError: (51-79): Mapping types for parameters or return variables can only be used in internal or library functions.

@@ -703,12 +703,12 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			if (!type(*var)->dataStoredIn(DataLocation::Storage))
 				m_errorReporter.typeError(var->location(), "Mapping types can only have a data location of \"storage\"." );
 			else if (!isLibraryFunction && _function.isPublic())
-				m_errorReporter.typeError(var->location(), "Mapping types as arguments or return values can only be used in internal or library functions.");
+				m_errorReporter.typeError(var->location(), "Mapping types for parameters or return variables can only be used in internal or library functions.");
 		}
 		else
 		{
 			if (!type(*var)->canLiveOutsideStorage() && _function.isPublic())
-			m_errorReporter.typeError(var->location(), "Type is required to live outside storage.");
+				m_errorReporter.typeError(var->location(), "Type is required to live outside storage.");
 			if (_function.isPublic() && !(type(*var)->interfaceType(isLibraryFunction)))
 				m_errorReporter.fatalTypeError(var->location(), "Internal or recursive type is not allowed for public or external functions.");
 		}
