@@ -65,7 +65,7 @@ two integers passed as function parameters, then you use something like::
 
 The names of return variables can be omitted.
 Return variables can be used as any other local variable and they
-are zero-initialized. If they are not explicitly
+are initialized with their :ref:`default value <default-value>` and have that value unless explicitly set.
 set, they stay zero value.
 
 You can either explicitly assign to return variables and
