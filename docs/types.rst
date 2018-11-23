@@ -923,7 +923,7 @@ You can initialise a statically sized memory array inline using syntax such as `
         }
     }
 
- You can create and initialise multi-dimensional arrays in the same way, but filling arrays can cost a lot of gas, so make sure you optimise how you use them.
+You can create and initialise multi-dimensional arrays in the same way, but filling arrays can cost a lot of gas, so make sure you optimise how you use them.
 
 .. index:: ! array;length, length, push, pop, !array;push, !array;pop
 
