@@ -31,10 +31,9 @@ with two integers, you would use something like::
 Function parameters can be used as any other local variable and they can also be assigned to.
 
 .. note::
-  An :ref:`external function<external-function-calls>` cannot accept a
-  multi-dimensional array as an input parameter. This functionality is possible
-  if you enable the new experimental ``ABIEncoderV2`` feature by adding
-  ``pragma experimental ABIEncoderV2;`` to your source file.
+    An :ref:`external function<external-function-calls>` cannot accept a multi-dimensional array as an input
+    parameter. This functionality is possible if you enable the new
+    experimental ``ABIEncoderV2`` feature by adding ``pragma experimental ABIEncoderV2;`` to your source file.
 
   An :ref:`internal function<external-function-calls>` can accept a
   multi-dimensional array without enabling the feature.
