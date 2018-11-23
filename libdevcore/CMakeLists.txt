@@ -1,5 +1,34 @@
-file(GLOB sources "*.cpp")
-file(GLOB headers "*.h")
+file(GLOB sources
+	CommonData.cpp
+	CommonIO.cpp
+	Exceptions.cpp
+	IndentedWriter.cpp
+	JSON.cpp
+	Keccak256.cpp
+	StringUtils.cpp
+	SwarmHash.cpp
+	UTF8.cpp
+	Whiskers.cpp
+)
+
+file(GLOB headers
+	Algorithms.h
+	Assertions.h
+	Common.h
+	CommonData.h
+	CommonIO.h
+	Exceptions.h
+	FixedHash.h
+	IndentedWriter.h
+	JSON.h
+	Keccak256.h
+	StringUtils.h
+	SwarmHash.h
+	UTF8.h
+	Visitor.h
+	Whiskers.h
+	vector_ref.h
+)
 
 add_library(devcore ${sources} ${headers})
 target_link_libraries(devcore PRIVATE jsoncpp ${Boost_FILESYSTEM_LIBRARIES} ${Boost_REGEX_LIBRARIES} ${Boost_SYSTEM_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
