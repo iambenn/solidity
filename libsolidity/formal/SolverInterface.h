@@ -74,6 +74,8 @@ struct FunctionSort: public Sort
 			[&](SortPointer _a, SortPointer _b) { return *_a == *_b; }
 		))
 			return false;
+		solAssert(codomain, "");
+		solAssert(_other.codomain, "");
 		return Sort::operator==(_other) && *codomain == *_other.codomain;
 	}
 
@@ -89,6 +91,10 @@ struct ArraySort: public Sort
 		Sort(Kind::Array), domain(std::move(_domain)), range(std::move(_range)) {}
 	bool operator==(ArraySort const& _other) const
 	{
+		solAssert(domain, "");
+		solAssert(range, "");
+		solAssert(_other.domain, "");
+		solAssert(_other.range, "");
 		return Sort::operator==(_other) && *domain == *_other.domain && *range == *_other.range;
 	}
 
@@ -152,6 +158,7 @@ public:
 		solAssert(_array.sort->kind == Kind::Array, "");
 		auto const& arraySort = dynamic_cast<ArraySort const*>(_array.sort.get());
 		solAssert(arraySort, "");
+		solAssert(_index.sort, "");
 		solAssert(*arraySort->domain == *_index.sort, "");
 		return Expression(
 			"select",
@@ -167,6 +174,8 @@ public:
 		solAssert(_array.sort->kind == Kind::Array, "");
 		auto const& arraySort = dynamic_cast<ArraySort const*>(_array.sort.get());
 		solAssert(arraySort, "");
+		solAssert(_index.sort, "");
+		solAssert(_element.sort, "");
 		solAssert(*arraySort->domain == *_index.sort, "");
 		solAssert(*arraySort->range == *_element.sort, "");
 		return Expression(
